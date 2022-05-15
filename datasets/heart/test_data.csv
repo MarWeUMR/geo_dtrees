@@ -1,0 +1,61 @@
+age,gender,chest_pain,resting_blood_pressure,cholesterol,fasting_blood_sugar_greater_than_120,resting_ecg_result,exercise_max_heart_rate,exercise_induced_angina,exercise_st_depression,exercise_st_slope,fluoroscopy_vessels_colored,thallium_stress_test,diagnosis
+49,female,asymptomatic,130,269,false,normal,163,no,0.0,upsloping,0,normal,Negative
+61,male,typical angina,134,234,false,normal,145,no,2.6,flat,2,normal,Positive
+60,female,non-angina pain,120,178,true,normal,96,no,0.0,upsloping,0,normal,Negative
+67,male,asymptomatic,120,237,false,normal,71,no,1.0,flat,0,normal,Positive
+58,male,asymptomatic,100,234,false,normal,156,no,0.1,upsloping,1,reversible defect,Positive
+47,male,asymptomatic,110,275,false,probable or definite left ventricular hypertrophy,118,yes,1.0,flat,1,normal,Positive
+52,male,asymptomatic,125,212,false,normal,168,no,1.0,upsloping,2,reversible defect,Positive
+62,male,atypical angina,128,208,true,probable or definite left ventricular hypertrophy,140,no,0.0,upsloping,0,normal,Negative
+57,male,asymptomatic,110,201,false,normal,126,yes,1.5,flat,0,fixed defect,Negative
+58,male,asymptomatic,146,218,false,normal,105,no,2.0,flat,1,reversible defect,Positive
+64,male,asymptomatic,128,263,false,normal,105,yes,0.2,flat,1,reversible defect,Negative
+51,female,non-angina pain,120,295,false,probable or definite left ventricular hypertrophy,157,no,0.6,upsloping,0,normal,Negative
+43,male,asymptomatic,115,303,false,normal,181,no,1.2,flat,0,normal,Negative
+42,female,non-angina pain,120,209,false,normal,173,no,0.0,flat,0,normal,Negative
+67,female,asymptomatic,106,223,false,normal,142,no,0.3,upsloping,2,normal,Negative
+76,female,non-angina pain,140,197,false,ST-T wave abnormality,116,no,1.1,flat,0,normal,Negative
+70,male,atypical angina,156,245,false,probable or definite left ventricular hypertrophy,143,no,0.0,upsloping,0,normal,Negative
+57,male,atypical angina,124,261,false,normal,141,no,0.3,upsloping,0,reversible defect,Positive
+44,female,non-angina pain,118,242,false,normal,149,no,0.3,flat,1,normal,Negative
+58,female,atypical angina,136,319,true,probable or definite left ventricular hypertrophy,152,no,0.0,upsloping,2,normal,Positive
+60,female,typical angina,150,240,false,normal,171,no,0.9,upsloping,0,normal,Negative
+44,male,non-angina pain,120,226,false,normal,169,no,0.0,upsloping,0,normal,Negative
+61,male,asymptomatic,138,166,false,probable or definite left ventricular hypertrophy,125,yes,3.6,flat,1,normal,Positive
+42,male,asymptomatic,136,315,false,normal,125,yes,1.8,flat,0,fixed defect,Positive
+52,male,asymptomatic,128,204,true,normal,156,yes,1.0,flat,0,,Positive
+59,male,non-angina pain,126,218,true,normal,134,no,2.2,flat,1,fixed defect,Positive
+40,male,asymptomatic,152,223,false,normal,181,no,0.0,upsloping,0,reversible defect,Positive
+42,male,non-angina pain,130,180,false,normal,150,no,0.0,upsloping,0,normal,Negative
+61,male,asymptomatic,140,207,false,probable or definite left ventricular hypertrophy,138,yes,1.9,upsloping,1,reversible defect,Positive
+66,male,asymptomatic,160,228,false,probable or definite left ventricular hypertrophy,138,no,2.3,upsloping,0,fixed defect,Negative
+46,male,asymptomatic,140,311,false,normal,120,yes,1.8,flat,2,reversible defect,Positive
+71,female,asymptomatic,112,149,false,normal,125,no,1.6,flat,0,normal,Negative
+59,male,typical angina,134,204,false,normal,162,no,0.8,upsloping,2,normal,Positive
+64,male,typical angina,170,227,false,probable or definite left ventricular hypertrophy,155,no,0.6,flat,0,reversible defect,Negative
+66,female,non-angina pain,146,278,false,probable or definite left ventricular hypertrophy,152,no,0.0,flat,1,normal,Negative
+39,female,non-angina pain,138,220,false,normal,152,no,0.0,flat,0,normal,Negative
+57,male,atypical angina,154,232,false,probable or definite left ventricular hypertrophy,164,no,0.0,upsloping,1,normal,Positive
+58,female,asymptomatic,130,197,false,normal,131,no,0.6,flat,0,normal,Negative
+57,male,asymptomatic,110,335,false,normal,143,yes,3.0,flat,1,reversible defect,Positive
+47,male,non-angina pain,130,253,false,normal,179,no,0.0,upsloping,0,normal,Negative
+55,female,asymptomatic,128,205,false,ST-T wave abnormality,130,yes,2.0,flat,1,reversible defect,Positive
+35,male,atypical angina,122,192,false,normal,174,no,0.0,upsloping,0,normal,Negative
+61,male,asymptomatic,148,203,false,normal,161,no,0.0,upsloping,1,reversible defect,Positive
+58,male,asymptomatic,114,318,false,ST-T wave abnormality,140,no,4.4,downsloping,3,fixed defect,Positive
+58,female,asymptomatic,170,225,true,probable or definite left ventricular hypertrophy,146,yes,2.8,flat,2,fixed defect,Positive
+58,male,atypical angina,125,220,false,normal,144,no,0.4,flat,,reversible defect,Negative
+56,male,atypical angina,130,221,false,probable or definite left ventricular hypertrophy,163,no,0.0,upsloping,0,reversible defect,Negative
+56,male,atypical angina,120,240,false,normal,169,no,0.0,downsloping,0,normal,Negative
+67,male,non-angina pain,152,212,false,probable or definite left ventricular hypertrophy,150,no,0.8,flat,0,reversible defect,Positive
+55,female,atypical angina,132,342,false,normal,166,no,1.2,upsloping,0,normal,Negative
+44,male,asymptomatic,120,169,false,normal,144,yes,2.8,downsloping,0,fixed defect,Positive
+63,male,asymptomatic,140,187,false,probable or definite left ventricular hypertrophy,144,yes,4.0,upsloping,2,reversible defect,Positive
+63,female,asymptomatic,124,197,false,normal,136,yes,0.0,flat,0,normal,Positive
+41,male,atypical angina,120,157,false,normal,182,no,0.0,upsloping,0,normal,Negative
+59,male,asymptomatic,164,176,true,probable or definite left ventricular hypertrophy,90,no,1.0,flat,2,fixed defect,Positive
+57,female,asymptomatic,140,241,false,normal,123,yes,0.2,flat,0,reversible defect,Positive
+45,male,typical angina,110,264,false,normal,132,no,1.2,flat,0,reversible defect,Positive
+68,male,asymptomatic,144,193,true,normal,141,no,3.4,flat,2,reversible defect,Positive
+57,male,asymptomatic,130,131,false,normal,115,yes,1.2,flat,1,reversible defect,Positive
+57,female,atypical angina,130,236,false,probable or definite left ventricular hypertrophy,174,no,0.0,flat,1,normal,Positive
