@@ -6,12 +6,18 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tangram = {git = "https://github.com/modelfoxdotdev/modelfox", rev = "6bb3300e411e268f7be9f25d1c5e6811abae950f"}
-tangram_table = "*"
-tangram_tree = "*"
-tangram_zip = "*"
-tangram_kill_chip = "*"
-tangram_metrics = "*"
+modelfox = {git = "https://github.com/MarWeUMR/modelfox"}
+modelfox_table = {git = "https://github.com/MarWeUMR/modelfox"}
+modelfox_tree = {git = "https://github.com/MarWeUMR/modelfox"}
+modelfox_kill_chip = {git = "https://github.com/MarWeUMR/modelfox"}
+modelfox_zip = {git = "https://github.com/MarWeUMR/modelfox"}
+modelfox_metrics = {git = "https://github.com/MarWeUMR/modelfox"}
+# tangram = {git = "https://github.com/modelfoxdotdev/modelfox", rev = "6bb3300e411e268f7be9f25d1c5e6811abae950f"}
+# ethcore-transaction = { git = "https://github.com/paritytech/parity-ethereum", path = "ethcore/transaction", branch = "master" }
+# tangram_table = "*"
+# tangram_zip = "*"
+# tangram_kill_chip = "*"
+# tangram_metrics = "*"
 xgboost-bindings = {git = "https://github.com/MarWeUMR/xgboost-bindings"}
 polars = {version="*", features=["ndarray", "strings", "rows", "fmt", "to_dummies"]}
 pyo3= {version="*", features=["auto-initialize"]}
@@ -21,5 +27,5 @@ serde = { version = "*", features = ["derive"] }
 serde_json = "1"
 eval-metrics = "*"
 
-[patch.crates-io]
-tangram_table = {path = "tangram_table"}
+# [patch.crates-io]
+# tangram_table = {path = "tangram_table"}

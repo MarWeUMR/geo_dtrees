@@ -8,7 +8,7 @@ mod tests {
     use ndarray::s;
     use ndarray::Array;
     use ndarray::Axis;
-    use tangram_tree::Progress;
+    use modelfox_tree::Progress;
     use xgboost_bindings::parameters;
     use xgboost_bindings::Booster;
 
@@ -120,14 +120,14 @@ mod tests {
             ModelType::Numeric,
             x_train,
             y_train.clone(),
-            &tangram_tree::TrainOptions {
+            &modelfox_tree::TrainOptions {
                 learning_rate: 0.1,
                 max_leaf_nodes: 255,
                 max_rounds: 100,
                 ..Default::default()
             },
             Progress {
-                kill_chip: &tangram_kill_chip::KillChip::default(),
+                kill_chip: &modelfox_kill_chip::KillChip::default(),
                 handle_progress_event: &mut |_| {},
             },
         );

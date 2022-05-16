@@ -5,12 +5,12 @@ use ndarray::{prelude::*, OwnedRepr};
 use serde_json::json;
 use std::any::Any;
 
-use tangram_table::prelude::*;
-use tangram_tree::{
+use modelfox_table::prelude::*;
+use modelfox_tree::{
     BinaryClassifierTrainOutput, MulticlassClassifierTrainOutput, Progress, RegressorTrainOutput,
     TrainOptions,
 };
-use tangram_zip::zip;
+use modelfox_zip::zip;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
@@ -53,14 +53,14 @@ pub fn run(set: Datasets) {
         model_type,
         x_train,
         y_train.clone(),
-        &tangram_tree::TrainOptions {
+        &modelfox_tree::TrainOptions {
             learning_rate: 0.1,
             max_leaf_nodes: 255,
             max_rounds: 100,
             ..Default::default()
         },
         Progress {
-            kill_chip: &tangram_kill_chip::KillChip::default(),
+            kill_chip: &modelfox_kill_chip::KillChip::default(),
             handle_progress_event: &mut |_| {},
         },
     );
@@ -135,7 +135,7 @@ impl TangramModel for RegressorTrainOutput {
         training_options: &TrainOptions,
         progress: Progress,
     ) -> RegressorTrainOutput {
-        let train_output = tangram_tree::Regressor::train(
+        let train_output = modelfox_tree::Regressor::train(
             x_train.view(),
             y_train.as_number().unwrap().view(),
             training_options,
@@ -156,7 +156,7 @@ impl TangramModel for BinaryClassifierTrainOutput {
         training_options: &TrainOptions,
         progress: Progress,
     ) -> BinaryClassifierTrainOutput {
-        let train_output = tangram_tree::BinaryClassifier::train(
+        let train_output = modelfox_tree::BinaryClassifier::train(
             x_train.view(),
             y_train.as_enum().unwrap().view(),
             training_options,
@@ -177,7 +177,7 @@ impl TangramModel for MulticlassClassifierTrainOutput {
         training_options: &TrainOptions,
         progress: Progress,
     ) -> MulticlassClassifierTrainOutput {
-        let train_output = tangram_tree::MulticlassClassifier::train(
+        let train_output = modelfox_tree::MulticlassClassifier::train(
             x_train.view(),
             y_train.as_enum().unwrap().view(),
             training_options,
@@ -246,8 +246,8 @@ pub fn tangram_evaluate(
     println!("Evaluating model...");
     match model_type {
         ModelType::Numeric => {
-            let mut metrics = tangram_metrics::RegressionMetrics::new();
-            metrics.update(tangram_metrics::RegressionMetricsInput {
+            let mut metrics = modelfox_metrics::RegressionMetrics::new();
+            metrics.update(modelfox_metrics::RegressionMetricsInput {
                 predictions: predictions.as_slice().unwrap(),
                 labels: y_test.as_number().unwrap().view().as_slice(),
             });
@@ -262,7 +262,7 @@ pub fn tangram_evaluate(
             let input = zip!(predictions.iter(), y_test.as_enum().unwrap().iter())
                 .map(|(probability, label)| (*probability, label.unwrap()))
                 .collect();
-            let auc_roc = tangram_metrics::AucRoc::compute(input);
+            let auc_roc = modelfox_metrics::AucRoc::compute(input);
 
             let output = json!({
                 "auc_roc": auc_roc,
@@ -276,10 +276,10 @@ pub fn tangram_evaluate(
                 .into_shape((y_test.len(), y_test.as_enum().unwrap().variants().len()))
                 .unwrap();
 
-            let mut metrics = tangram_metrics::MulticlassClassificationMetrics::new(
+            let mut metrics = modelfox_metrics::MulticlassClassificationMetrics::new(
                 y_test.as_enum().unwrap().variants().len(),
             );
-            metrics.update(tangram_metrics::MulticlassClassificationMetricsInput {
+            metrics.update(modelfox_metrics::MulticlassClassificationMetricsInput {
                 probabilities: arr.view(),
                 labels: y_test.as_enum().unwrap().view().as_slice().into(),
             });
@@ -306,7 +306,7 @@ pub fn tangram_train_model(
     match model_type {
         ModelType::Binary => {
             println!("returning BinaryClassifierTrainOutput");
-            let train_output = tangram_tree::BinaryClassifier::train(
+            let train_output = modelfox_tree::BinaryClassifier::train(
                 x_train.view(),
                 y_train.as_enum().unwrap().view(),
                 training_options,
@@ -318,7 +318,7 @@ pub fn tangram_train_model(
 
         ModelType::Numeric => {
             println!("returning RegressorTrainOutput");
-            let train_output = tangram_tree::Regressor::train(
+            let train_output = modelfox_tree::Regressor::train(
                 x_train.view(),
                 y_train.as_number().unwrap().view(),
                 training_options,
@@ -332,7 +332,7 @@ pub fn tangram_train_model(
 
             println!("returning MulticlassTrainOutput");
 
-            let train_output = tangram_tree::MulticlassClassifier::train(
+            let train_output = modelfox_tree::MulticlassClassifier::train(
                 x_train.view(),
                 y.view(),
                 &Default::default(),
