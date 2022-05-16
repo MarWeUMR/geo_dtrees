@@ -53,16 +53,16 @@ pub fn run(set: Datasets) {
         model_type,
         x_train,
         y_train.clone(),
-        &modelfox_tree::TrainOptions {
-            learning_rate: 0.1,
-            max_leaf_nodes: 255,
-            max_rounds: 100,
-            ..Default::default()
-        },
-        Progress {
-            kill_chip: &modelfox_kill_chip::KillChip::default(),
-            handle_progress_event: &mut |_| {},
-        },
+        // &modelfox_tree::TrainOptions {
+        //     learning_rate: 0.1,
+        //     max_leaf_nodes: 255,
+        //     max_rounds: 100,
+        //     ..Default::default()
+        // },
+        // Progress {
+        //     kill_chip: &modelfox_kill_chip::KillChip::default(),
+        //     handle_progress_event: &mut |_| {},
+        // },
     );
 
     // -------------------------------------
@@ -298,10 +298,22 @@ pub fn tangram_train_model(
     model_type: ModelType,
     x_train: Table,
     y_train: TableColumn,
-    training_options: &TrainOptions,
-    progress: Progress,
+    // training_options: &TrainOptions,
+    // progress: Progress,
 ) -> Box<dyn TangramModel> {
     println!("Training model...");
+
+    let training_options = &modelfox_tree::TrainOptions {
+            learning_rate: 0.1,
+            max_leaf_nodes: 255,
+            max_rounds: 100,
+            ..Default::default()
+        };
+
+    let progress = Progress {
+            kill_chip: &modelfox_kill_chip::KillChip::default(),
+            handle_progress_event: &mut |_| {},
+        };
 
     match model_type {
         ModelType::Binary => {
