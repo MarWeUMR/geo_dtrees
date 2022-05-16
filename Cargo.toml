@@ -6,12 +6,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-modelfox = {git = "https://github.com/MarWeUMR/modelfox"}
-modelfox_table = {git = "https://github.com/MarWeUMR/modelfox"}
-modelfox_tree = {git = "https://github.com/MarWeUMR/modelfox"}
-modelfox_kill_chip = {git = "https://github.com/MarWeUMR/modelfox"}
-modelfox_zip = {git = "https://github.com/MarWeUMR/modelfox"}
-modelfox_metrics = {git = "https://github.com/MarWeUMR/modelfox"}
+tangram = {git = "https://github.com/MarWeUMR/modelfox", branch = "tangram"}
+tangram_table = {git = "https://github.com/MarWeUMR/modelfox", branch = "tangram"}
+tangram_tree = {git = "https://github.com/MarWeUMR/modelfox", branch = "tangram"}
+tangram_kill_chip = {git = "https://github.com/MarWeUMR/modelfox", branch = "tangram"}
+tangram_zip = {git = "https://github.com/MarWeUMR/modelfox", branch = "tangram"}
+tangram_metrics = {git = "https://github.com/MarWeUMR/modelfox", branch = "tangram"}
 # tangram = {git = "https://github.com/modelfoxdotdev/modelfox", rev = "6bb3300e411e268f7be9f25d1c5e6811abae950f"}
 # ethcore-transaction = { git = "https://github.com/paritytech/parity-ethereum", path = "ethcore/transaction", branch = "master" }
 # tangram_table = "*"

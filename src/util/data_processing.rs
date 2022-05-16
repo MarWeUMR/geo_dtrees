@@ -10,7 +10,7 @@ use polars::{
     io::SerReader,
     prelude::*,
 };
-use modelfox_table::{Table, TableColumnType};
+use tangram_table::{Table, TableColumnType};
 use xgboost_bindings::DMatrix;
 
 pub fn get_multiclass_label_count(
@@ -232,7 +232,7 @@ fn generate_enum_column_schema(enum_cols: Vec<&str>) -> Schema {
 pub fn build_tangram_options<'a>(
     dataset: &str,
     enum_cols: Vec<&str>,
-) -> modelfox_table::FromCsvOptions<'a> {
+) -> tangram_table::FromCsvOptions<'a> {
     // this is necessary if there are integer columns representing categories.
     // these columns need to get a special treatment
     let enum_schema = generate_enum_column_schema(enum_cols.clone());
@@ -259,7 +259,7 @@ pub fn build_tangram_options<'a>(
     }
 
     // make options
-    let options = modelfox_table::FromCsvOptions {
+    let options = tangram_table::FromCsvOptions {
         column_types: Some(btm),
         ..Default::default()
     };
@@ -277,8 +277,8 @@ pub fn get_tangram_matrix(
 ) -> (
     Table,
     Table,
-    modelfox_table::TableColumn,
-    modelfox_table::TableColumn,
+    tangram_table::TableColumn,
+    tangram_table::TableColumn,
 ) {
     let x_train = Table::from_ndarray(
         x_train_array,
@@ -320,8 +320,8 @@ pub fn get_tangram_matrix_from_file(
 ) -> (
     Table,
     Table,
-    modelfox_table::TableColumn,
-    modelfox_table::TableColumn,
+    tangram_table::TableColumn,
+    tangram_table::TableColumn,
 ) {
     let train_path = &format!("datasets/{dataset}/train_data.csv");
     let test_path = &format!("datasets/{dataset}/test_data.csv");
