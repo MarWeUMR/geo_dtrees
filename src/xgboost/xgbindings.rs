@@ -1,16 +1,15 @@
-use ndarray::{ArrayBase, Dim, OwnedRepr};
-use xgboost_bindings::{
-    parameters,
-    Booster,
-};
+use ndarray::{ArrayBase, Dim, OwnedRepr, arr2};
+use xgboost_bindings::{parameters, Booster};
 
-use crate::util::data_processing::{self, get_xg_matrix, xg_set_ground_truth, load_dataframe_from_file, label_encode_dataframe, one_hot_encode_dataframe, get_multiclass_label_count};
+use crate::util::data_processing::{
+    self, get_multiclass_label_count, get_xg_matrix, label_encode_dataframe,
+    load_dataframe_from_file, one_hot_encode_dataframe, xg_set_ground_truth,
+};
 
 use eval_metrics::{
     classification::{BinaryConfusionMatrix, MultiConfusionMatrix},
     regression::rmse,
 };
-
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]
@@ -21,6 +20,31 @@ pub enum Datasets {
     Boston,
     Cancer,
     Iris,
+}
+
+pub fn ext_mem() {
+    let data = arr2(&[
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+        [1.0, 5.0, 10.0, 16.0],
+    ]);
 }
 
 pub fn run(set: Datasets) {
@@ -40,10 +64,7 @@ pub fn run(set: Datasets) {
     // read preprocessed data to rust
     // preprocessing consists of encodeing (label/onehot) and train/test splitting
     let (x_train_array, x_test_array, y_train_array, y_test_array) =
-        data_processing::get_train_test_split_arrays_from_dataframe(
-            df,
-            target_column,
-        );
+        data_processing::get_train_test_split_arrays_from_dataframe(df, target_column);
 
     // get xgboost style matrices
     let (mut x_train, mut x_test) = get_xg_matrix(x_train_array, x_test_array);
@@ -79,7 +100,7 @@ pub fn run(set: Datasets) {
     evaluate_model(set, &scores, &labels, y_train_array);
 }
 
-fn evaluate_model(
+pub fn evaluate_model(
     set: Datasets,
     scores: &Vec<f32>,
     labels: &[f32],
@@ -175,7 +196,7 @@ pub fn get_objective<'a>(
         }
         Datasets::Boston => {
             println!("LinReg chosen");
-            parameters::learning::Objective::RegLinear
+            parameters::learning::Objective::RegSquaredError
         }
         Datasets::Cancer => {
             println!("BinaryLogistic chosen");
