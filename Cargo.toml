@@ -12,7 +12,7 @@ tangram_tree = {git = "https://github.com/MarWeUMR/modelfox", branch = "tangram"
 tangram_kill_chip = {git = "https://github.com/MarWeUMR/modelfox", branch = "tangram"}
 tangram_zip = {git = "https://github.com/MarWeUMR/modelfox", branch = "tangram"}
 tangram_metrics = {git = "https://github.com/MarWeUMR/modelfox", branch = "tangram"}
-xgboost-bindings = {git = "https://github.com/MarWeUMR/xgboost-bindings", branch = "exp"}
+xgboost-bindings = {git = "https://github.com/MarWeUMR/xgboost-bindings"}
 polars = {version="*", features=["ndarray", "strings", "rows", "fmt", "to_dummies"]}
 # pyo3= {version="*", features=["auto-initialize"]}
 ndarray = "*"

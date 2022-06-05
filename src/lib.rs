@@ -128,13 +128,13 @@ mod tests {
     ) -> Booster {
         
 
-        // let learning_params = parameters::learning::LearningTaskParametersBuilder::default()
-        //     .objective(parameters::learning::Objective::RegSquaredError)
-        //     .build()
-        //     .unwrap();
+        let learning_params = parameters::learning::LearningTaskParametersBuilder::default()
+            .objective(parameters::learning::Objective::RegSquaredError)
+            .build()
+            .unwrap();
 
         let tree_params = tree::TreeBoosterParametersBuilder::default()
-            // .eta(0.1)
+            .eta(0.1)
             .tree_method(tree::TreeMethod::Hist)
             .max_depth(3)
             .build()
@@ -143,7 +143,7 @@ mod tests {
         // overall configuration for Booster
         let booster_params = parameters::BoosterParametersBuilder::default()
             .booster_type(parameters::booster::BoosterType::Tree(tree_params))
-            // .learning_params(learning_params)
+            .learning_params(learning_params)
             .verbose(true)
             .build()
             .unwrap();
