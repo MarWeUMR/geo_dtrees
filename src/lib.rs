@@ -12,7 +12,9 @@ mod tests {
     use ndarray::Array;
 
     use ndarray::s;
+    use polars::datatypes::Float32Type;
     use polars::datatypes::IdxCa;
+    use polars::prelude::DataFrame;
     use polars::prelude::NamedFrom;
     use xgboost_bindings::parameters;
     use xgboost_bindings::parameters::tree;
@@ -36,43 +38,55 @@ mod tests {
     fn get_split_data(
         start: usize,
         stop: usize,
-    ) -> (
-        xgboost_bindings::DMatrix,
-        xgboost_bindings::DMatrix,
-        ndarray::ArrayBase<ndarray::OwnedRepr<f32>, ndarray::Dim<[usize; 2]>>,
-        ndarray::ArrayBase<ndarray::OwnedRepr<f32>, ndarray::Dim<[usize; 2]>>,
-    ) {
+    ) -> DMatrix   {
         let path = "california_housing.csv";
-        let mut df_total = load_dataframe_from_file(path, None);
+        let df_total = load_dataframe_from_file(path, None);
 
-        println!("df_total.shape: {:?}", df_total.shape());
         let ix: Vec<_> = (start as u32..stop as u32).collect();
         let ix_slice = ix.as_slice();
         let idx = IdxCa::new("idx", &ix_slice);
-        let df = df_total.take(&idx).unwrap();
+        let mut df = df_total.take(&idx).unwrap();
 
-        let (x_train_array, x_test_array, y_train_array, y_test_array) =
-            data_processing::get_train_test_split_arrays_from_dataframe(df, "MedHouseVal");
+        // make X and y
+        let y: DataFrame = DataFrame::new(vec![df.drop_in_place("MedHouseVal").unwrap()]).unwrap();
+
+        println!("y: {:?}", df.head(Some(5)));
+        let x = df.to_ndarray::<Float32Type>().unwrap();
 
         // get xgboost style matrices
-        let (mut x_train_1, mut x_test_1) = get_xg_matrix(x_train_array, x_test_array);
+        let train_shape = x.raw_dim();
 
-        xg_set_ground_truth(&mut x_train_1, &mut x_test_1, &y_train_array, &y_test_array);
+        let num_rows_train = train_shape[0];
 
-        (x_train_1, x_test_1, y_train_array, y_test_array)
+        let mut x_mat = DMatrix::from_dense(
+            x
+                .into_shape(train_shape[0] * train_shape[1])
+                .unwrap()
+                .as_slice()
+                .unwrap(),
+            num_rows_train,
+        )
+        .unwrap();
+
+        // set labels
+        x_mat
+        .set_labels(y.to_ndarray::<Float32Type>().unwrap().as_slice().unwrap())
+        .unwrap();
+
+
+        x_mat
+
     }
 
     fn boosty_refresh_leaf(
-        x_train: DMatrix,
-        y_train_array: ndarray::ArrayBase<ndarray::OwnedRepr<f32>, ndarray::Dim<[usize; 2]>>,
+        xy: DMatrix,
+        evals: &[(&DMatrix, &str); 2]
     ) -> Booster {
-        let xg_classifier = get_objective(
-            crate::xgboost::xgbindings::Datasets::Boston,
-            y_train_array.clone(),
-        );
+        
+
 
         let learning_params = parameters::learning::LearningTaskParametersBuilder::default()
-            .objective(xg_classifier)
+            .objective(parameters::learning::Objective::RegSquaredError)
             .build()
             .unwrap();
 
@@ -82,7 +96,7 @@ mod tests {
             .process_type(tree::ProcessType::Update)
             .updater(vec![tree::TreeUpdater::Refresh])
             .refresh_leaf(true)
-            .max_depth(6)
+            .max_depth(3)
             .build()
             .unwrap();
 
@@ -93,102 +107,121 @@ mod tests {
             .verbose(true)
             .build()
             .unwrap();
+
         // finalize training config
         let params = parameters::TrainingParametersBuilder::default()
-            .dtrain(&x_train)
+            .dtrain(&xy)
+            .evaluation_sets(Some(evals))
+            .boost_rounds(16)
             .booster_params(booster_params.clone())
             .build()
             .unwrap();
 
         let bst = Booster::train_increment(&params, "mod.json").unwrap();
-        let path = Path::new("mod.json");
+        let path = Path::new("mod_rl_true.json");
         bst.save(&path).expect("saving booster");
         bst
     }
 
     fn boosty(
-        x_train: DMatrix,
-        y_train_array: ndarray::ArrayBase<ndarray::OwnedRepr<f32>, ndarray::Dim<[usize; 2]>>,
-        i: usize,
+        xy: DMatrix,
     ) -> Booster {
-        let xg_classifier = get_objective(
-            crate::xgboost::xgbindings::Datasets::Boston,
-            y_train_array.clone(),
-        );
+        
 
-        let learning_params = parameters::learning::LearningTaskParametersBuilder::default()
-            .objective(xg_classifier)
-            .build()
-            .unwrap();
+        // let learning_params = parameters::learning::LearningTaskParametersBuilder::default()
+        //     .objective(parameters::learning::Objective::RegSquaredError)
+        //     .build()
+        //     .unwrap();
 
         let tree_params = tree::TreeBoosterParametersBuilder::default()
             // .eta(0.1)
             .tree_method(tree::TreeMethod::Hist)
-            .max_depth(6)
+            .max_depth(3)
             .build()
             .unwrap();
 
         // overall configuration for Booster
         let booster_params = parameters::BoosterParametersBuilder::default()
             .booster_type(parameters::booster::BoosterType::Tree(tree_params))
-            .learning_params(learning_params)
+            // .learning_params(learning_params)
             .verbose(true)
             .build()
             .unwrap();
+
         // finalize training config
+        let eval_sets = &[(&xy, "train")];
+
         let params = parameters::TrainingParametersBuilder::default()
-            .dtrain(&x_train)
+            .dtrain(&xy)
+            .boost_rounds(16)
+            .evaluation_sets(Some(eval_sets))
             .booster_params(booster_params.clone())
             .build()
             .unwrap();
 
-        if i == 0 {
             // train model, and print evaluation data
-            let bst = Booster::train(&params).unwrap();
+            let bst = Booster::my_train(&params).unwrap();
 
             let path = Path::new("mod.json");
             bst.save(&path).expect("saving booster");
             bst
-        } else {
-            let bst = Booster::train_increment(&params, "mod.json").unwrap();
-            let path = Path::new("mod.json");
-            bst.save(&path).expect("saving booster");
-            bst
-        }
     }
 
     #[test]
     fn splits() {
         // make data sets
 
-        let (x_train_ref, x_test_ref, y_train_ref, y_test_ref) = get_split_data(10000, 11000);
-        let (x_train_1, x_test_1, y_train_1, y_test_1) = get_split_data(0, 999);
-        let (x_train_2, x_test_2, y_train_2, y_test_2) = get_split_data(1000, 1999);
-        let (x_train_3, x_test_3, y_train_3, y_test_3) = get_split_data(2000, 2999);
+        let xy = get_split_data(0, 10320);
+        let xy_copy = get_split_data(0, 10320);
+        let xy_refresh = get_split_data(10320, 20460);
+        let xy_refresh_copy = get_split_data(10320, 20460);
 
-        // dataset 1
-        let bst = boosty(x_train_1, y_train_1, 0);
-        let scores = bst.predict(&x_test_ref).unwrap();
-        let labels = x_test_ref.get_labels().unwrap();
+        let evals = &[(&xy_copy, "orig"), (&xy_refresh_copy, "train")];
+        let booster = boosty(xy);
+        let booster_rl = boosty_refresh_leaf(xy_refresh, evals);
 
-        println!("evaluating");
-        evaluate_model(Datasets::Boston, &scores, &labels, y_test_ref.clone());
 
-        // dataset 2
-        let bst = boosty_refresh_leaf(x_train_2, y_train_2);
-        let scores = bst.predict(&x_test_ref).unwrap();
-        let labels = x_test_ref.get_labels().unwrap();
 
-        println!("evaluating");
-        evaluate_model(Datasets::Boston, &scores, &labels, y_test_ref.clone());
 
-        // dataset 3
-        let bst = boosty_refresh_leaf(x_train_3, y_train_3);
-        let scores = bst.predict(&x_test_ref).unwrap();
-        let labels = x_test_ref.get_labels().unwrap();
 
-        println!("evaluating");
-        evaluate_model(Datasets::Boston, &scores, &labels, y_test_ref.clone());
+        //         let bst = boosty(x_train, &x_test_ref, y_train, 0);
+        //         let scores = bst.predict(&x_test_ref).unwrap();
+        //         let labels = x_test_ref.get_labels().unwrap();
+        //         println!("evaluating");
+        //         println!("{:?}", scores.get(0).unwrap());
+        //         evaluate_model(Datasets::Boston, &scores, &labels, y_test_ref.clone());
+        //         let bst = boosty_refresh_leaf(x_train, &x_test_ref, y_train);
+        //         let scores = bst.predict(&x_test_ref).unwrap();
+        //         let labels = x_test_ref.get_labels().unwrap();
+        //
+        //         println!("evaluating");
+        //         evaluate_model(Datasets::Boston, &scores, &labels, y_test_ref.clone());
+        //     }
+        // }
+
+        // // dataset 1
+        // let bst = boosty(x_train_1, y_train_1, 0);
+        // let scores = bst.predict(&x_test_ref).unwrap();
+        // let labels = x_test_ref.get_labels().unwrap();
+        //
+        // println!("evaluating");
+        // evaluate_model(Datasets::Boston, &scores, &labels, y_test_ref.clone());
+        //
+        // // dataset 2
+        // let bst = boosty_refresh_leaf(x_train_2, y_train_2);
+        // let scores = bst.predict(&x_test_ref).unwrap();
+        // let labels = x_test_ref.get_labels().unwrap();
+        //
+        // println!("evaluating");
+        // evaluate_model(Datasets::Boston, &scores, &labels, y_test_ref.clone());
+        //
+        // // dataset 3
+        // let bst = boosty_refresh_leaf(x_train_3, y_train_3);
+        // let scores = bst.predict(&x_test_ref).unwrap();
+        // let labels = x_test_ref.get_labels().unwrap();
+        //
+        // println!("evaluating");
+        // evaluate_model(Datasets::Boston, &scores, &labels, y_test_ref.clone());
 
         // -------------
         // let start = vec![0, 1000, 2000, 3000, 4000, 5000];

@@ -14,7 +14,7 @@ tangram_zip = {git = "https://github.com/MarWeUMR/modelfox", branch = "tangram"}
 tangram_metrics = {git = "https://github.com/MarWeUMR/modelfox", branch = "tangram"}
 xgboost-bindings = {git = "https://github.com/MarWeUMR/xgboost-bindings", branch = "exp"}
 polars = {version="*", features=["ndarray", "strings", "rows", "fmt", "to_dummies"]}
-pyo3= {version="*", features=["auto-initialize"]}
+# pyo3= {version="*", features=["auto-initialize"]}
 ndarray = "*"
 num-traits = "*"
 serde = { version = "*", features = ["derive"] }
