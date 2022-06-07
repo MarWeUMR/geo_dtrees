@@ -4,6 +4,7 @@ pub mod xgboost;
 
 #[cfg(test)]
 mod tests {
+    use std::fs::File;
     use std::iter::zip;
     use std::path::Path;
 
@@ -14,9 +15,13 @@ mod tests {
     use ndarray::s;
     use polars::datatypes::Float32Type;
     use polars::datatypes::IdxCa;
+    use polars::io::SerWriter;
+    use polars::prelude::CsvWriter;
     use polars::prelude::DataFrame;
     use polars::prelude::NamedFrom;
     use xgboost_bindings::parameters;
+    use xgboost_bindings::parameters::learning::EvaluationMetric;
+    use xgboost_bindings::parameters::learning::Metrics;
     use xgboost_bindings::parameters::tree;
     use xgboost_bindings::Booster;
     use xgboost_bindings::DMatrix;
@@ -35,10 +40,7 @@ mod tests {
     use crate::xgboost::xgbindings::get_objective;
     use crate::xgboost::xgbindings::Datasets;
 
-    fn get_split_data(
-        start: usize,
-        stop: usize,
-    ) -> DMatrix   {
+    fn get_split_data(start: usize, stop: usize) -> DMatrix {
         let path = "california_housing.csv";
         let df_total = load_dataframe_from_file(path, None);
 
@@ -48,10 +50,17 @@ mod tests {
         let mut df = df_total.take(&idx).unwrap();
 
         // make X and y
-        let y: DataFrame = DataFrame::new(vec![df.drop_in_place("MedHouseVal").unwrap()]).unwrap();
+        let mut y: DataFrame = DataFrame::new(vec![df.drop_in_place("MedHouseVal").unwrap()]).unwrap();
 
-        println!("y: {:?}", df.head(Some(5)));
+        let mut file = File::create("example.csv").expect("could not create file");
+
+        CsvWriter::new(&mut file)
+            .has_header(true)
+            .with_delimiter(b',')
+            .finish(&mut y);
+
         let x = df.to_ndarray::<Float32Type>().unwrap();
+        println!("x: {:?}", x);
 
         // get xgboost style matrices
         let train_shape = x.raw_dim();
@@ -59,8 +68,7 @@ mod tests {
         let num_rows_train = train_shape[0];
 
         let mut x_mat = DMatrix::from_dense(
-            x
-                .into_shape(train_shape[0] * train_shape[1])
+            x.into_shape(train_shape[0] * train_shape[1])
                 .unwrap()
                 .as_slice()
                 .unwrap(),
@@ -70,21 +78,13 @@ mod tests {
 
         // set labels
         x_mat
-        .set_labels(y.to_ndarray::<Float32Type>().unwrap().as_slice().unwrap())
-        .unwrap();
-
+            .set_labels(y.to_ndarray::<Float32Type>().unwrap().as_slice().unwrap())
+            .unwrap();
 
         x_mat
-
     }
 
-    fn boosty_refresh_leaf(
-        xy: DMatrix,
-        evals: &[(&DMatrix, &str); 2]
-    ) -> Booster {
-        
-
-
+    fn boosty_refresh_leaf(xy: DMatrix, evals: &[(&DMatrix, &str); 2]) -> Booster {
         let learning_params = parameters::learning::LearningTaskParametersBuilder::default()
             .objective(parameters::learning::Objective::RegSquaredError)
             .build()
@@ -123,13 +123,10 @@ mod tests {
         bst
     }
 
-    fn boosty(
-        xy: DMatrix,
-    ) -> Booster {
-        
-
+    fn boosty(xy: DMatrix) -> Booster {
         let learning_params = parameters::learning::LearningTaskParametersBuilder::default()
             .objective(parameters::learning::Objective::RegSquaredError)
+            .eval_metrics(Metrics::Custom(vec![EvaluationMetric::RMSE]))
             .build()
             .unwrap();
 
@@ -159,12 +156,58 @@ mod tests {
             .build()
             .unwrap();
 
-            // train model, and print evaluation data
-            let bst = Booster::my_train(&params).unwrap();
+        let keys = vec![
+            "fail_on_invalid_gpu_id",
+            "gpu_id",
+            "n_jobs",
+            "nthread",
+            "random_state",
+            "seed",
+            "seed_per_iteration",
+            "validate_parameters",
+            "num_parallel_tree",
+            "size_leaf_vector",
+            "predictor",
+            "process_type",
+            "tree_method",
+            "updater",
+            "updater_seq",
+            "single_precision_histogram",
+            // "num_trees",
+            "eval_metric",
+            "eta",
+            "max_depth",
+        ];
 
-            let path = Path::new("mod.json");
-            bst.save(&path).expect("saving booster");
-            bst
+        let values = vec![
+            "0",
+            "-1",
+            "0",
+            "0",
+            "0",
+            "0",
+            "0",
+            "1",
+            "1",
+            "0",
+            "auto",
+            "default",
+            "hist",
+            "grow_quantile_histmaker",
+            "grow_quantile_histmaker",
+            "0",
+            // "16",
+            "rmse",
+            "0.3",
+            "3",
+        ];
+
+        // train model, and print evaluation data
+        let bst = Booster::my_train(&params, keys, values).unwrap();
+
+        let path = Path::new("mod.json");
+        bst.save(&path).expect("saving booster");
+        bst
     }
 
     #[test]
@@ -172,70 +215,13 @@ mod tests {
         // make data sets
 
         let xy = get_split_data(0, 10320);
-        let xy_copy = get_split_data(0, 10320);
-        let xy_refresh = get_split_data(10320, 20460);
-        let xy_refresh_copy = get_split_data(10320, 20460);
-
-        let evals = &[(&xy_copy, "orig"), (&xy_refresh_copy, "train")];
-        let booster = boosty(xy);
-        let booster_rl = boosty_refresh_leaf(xy_refresh, evals);
-
-
-
-
-
-        //         let bst = boosty(x_train, &x_test_ref, y_train, 0);
-        //         let scores = bst.predict(&x_test_ref).unwrap();
-        //         let labels = x_test_ref.get_labels().unwrap();
-        //         println!("evaluating");
-        //         println!("{:?}", scores.get(0).unwrap());
-        //         evaluate_model(Datasets::Boston, &scores, &labels, y_test_ref.clone());
-        //         let bst = boosty_refresh_leaf(x_train, &x_test_ref, y_train);
-        //         let scores = bst.predict(&x_test_ref).unwrap();
-        //         let labels = x_test_ref.get_labels().unwrap();
+        // let xy_copy = get_split_data(0, 10320);
+        // let xy_refresh = get_split_data(10320, 20460);
+        // let xy_refresh_copy = get_split_data(10320, 20460);
         //
-        //         println!("evaluating");
-        //         evaluate_model(Datasets::Boston, &scores, &labels, y_test_ref.clone());
-        //     }
-        // }
-
-        // // dataset 1
-        // let bst = boosty(x_train_1, y_train_1, 0);
-        // let scores = bst.predict(&x_test_ref).unwrap();
-        // let labels = x_test_ref.get_labels().unwrap();
-        //
-        // println!("evaluating");
-        // evaluate_model(Datasets::Boston, &scores, &labels, y_test_ref.clone());
-        //
-        // // dataset 2
-        // let bst = boosty_refresh_leaf(x_train_2, y_train_2);
-        // let scores = bst.predict(&x_test_ref).unwrap();
-        // let labels = x_test_ref.get_labels().unwrap();
-        //
-        // println!("evaluating");
-        // evaluate_model(Datasets::Boston, &scores, &labels, y_test_ref.clone());
-        //
-        // // dataset 3
-        // let bst = boosty_refresh_leaf(x_train_3, y_train_3);
-        // let scores = bst.predict(&x_test_ref).unwrap();
-        // let labels = x_test_ref.get_labels().unwrap();
-        //
-        // println!("evaluating");
-        // evaluate_model(Datasets::Boston, &scores, &labels, y_test_ref.clone());
-
-        // -------------
-        // let start = vec![0, 1000, 2000, 3000, 4000, 5000];
-        // let stop = vec![1000, 2000, 3000, 4000, 5000, 6000];
-        // let (_, x_test_ref, _, y_test_ref) = get_split_data(0, 4000);
-        //
-        // for (i, j) in zip(start, stop) {
-        //     let (x_train, _, y_train, _) = get_split_data(i, j);
-        //     let bst = boosty(x_train, y_train, i);
-        //     let scores = bst.predict(&x_test_ref).unwrap();
-        //     let labels = x_test_ref.get_labels().unwrap();
-        //
-        //     println!("Evaluating pre-trained model");
-        // }
+        // let evals = &[(&xy_copy, "orig"), (&xy_refresh_copy, "train")];
+        // let booster = boosty(xy);
+        // let booster_rl = boosty_refresh_leaf(xy_refresh, evals);
     }
 
     #[test]
