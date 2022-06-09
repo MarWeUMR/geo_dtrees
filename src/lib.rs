@@ -208,6 +208,9 @@ mod tests {
 
         let evals = &[(&xy_copy_copy, "orig"), (&xy_refresh_copy, "train")];
         let booster_rl = train_booster(keys, values, Some(evals), xy_refresh, Some(booster));
+        let path = Path::new("mod_rust_refresh_leaf_true.json");
+        booster_rl.save(&path).expect("saving booster");
+
     }
 
     #[test]
