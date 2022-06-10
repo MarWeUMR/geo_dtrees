@@ -142,29 +142,14 @@ mod tests {
     fn xg_update_process_test() {
         // make config
         let keys = vec![
-            "fail_on_invalid_gpu_id",
-            "gpu_id",
-            "n_jobs",
-            "nthread",
-            "random_state",
-            "seed",
-            "seed_per_iteration",
             "validate_parameters",
-            "num_parallel_tree",
-            "size_leaf_vector",
-            "predictor",
             "process_type",
             "tree_method",
-            "single_precision_histogram",
             "eval_metric",
-            "eta",
             "max_depth",
         ];
 
-        let values = vec![
-            "0", "-1", "0", "0", "0", "0", "0", "1", "1", "0", "auto", "default", "hist", "0",
-            "rmse", "0.3", "3",
-        ];
+        let values = vec!["1", "default", "hist", "rmse", "3"];
 
         // make data sets
         let xy = get_split_data(0, 10320);
@@ -179,38 +164,21 @@ mod tests {
         let booster = train_booster(keys.clone(), values.clone(), Some(evals), xy, None);
 
         let keys = vec![
-            "fail_on_invalid_gpu_id",
-            "gpu_id",
-            "n_jobs",
-            "nthread",
-            "random_state",
-            "seed",
-            "seed_per_iteration",
             "validate_parameters",
-            "num_parallel_tree",
-            "size_leaf_vector",
-            "predictor",
             "process_type",
-            // "tree_method",
             "updater",
             "refresh_leaf",
-            "single_precision_histogram",
             "eval_metric",
-            "eta",
-            "max_depth",
         ];
 
-        let values = vec![
-            "0", "-1", "0", "0", "0", "0", "0", "1", "1", "0", "auto", "update",
-            // "hist",
-            "refresh", "true", "0", "rmse", "0.3", "6",
-        ];
+        let values = vec!["1", "update", "refresh", "true", "rmse"];
 
         let evals = &[(&xy_copy_copy, "orig"), (&xy_refresh_copy, "train")];
         let booster_rl = train_booster(keys, values, Some(evals), xy_refresh, Some(booster));
+        println!("refresh config");
+        booster_rl.save_config();
         let path = Path::new("mod_rust_refresh_leaf_true.json");
         booster_rl.save(&path).expect("saving booster");
-
     }
 
     #[test]
