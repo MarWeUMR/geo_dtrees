@@ -5,14 +5,10 @@ pub mod xgboost;
 #[cfg(test)]
 mod tests {
 
-    use std::any::Any;
-    use std::fs;
     use std::mem;
-    use std::mem::size_of;
     use std::path::Path;
 
     use ndarray::arr2;
-    use ndarray::Array2;
 
     use ndarray::Array;
 
@@ -23,8 +19,6 @@ mod tests {
     use polars::prelude::DataFrame;
     use polars::prelude::NamedFrom;
     use xgboost_bindings::parameters;
-    use xgboost_bindings::parameters::learning::EvaluationMetric;
-    use xgboost_bindings::parameters::learning::Metrics;
     use xgboost_bindings::parameters::tree;
     use xgboost_bindings::Booster;
     use xgboost_bindings::DMatrix;
@@ -45,7 +39,6 @@ mod tests {
 
         // get data as dataframe
         let df_total = load_dataframe_from_file(path, None);
-        println!("{:?}", df_total.shape());
 
         // get first half of data as dataframe
         let ix: Vec<_> = (start as u32..stop as u32).collect();
@@ -53,10 +46,8 @@ mod tests {
         let idx = IdxCa::new("idx", &ix_slice);
         let mut df = df_total.take(&idx).unwrap();
 
-        println!("{:?}", df);
         // make X and y
-        let mut y: DataFrame =
-            DataFrame::new(vec![df.drop_in_place("MedHouseVal").unwrap()]).unwrap();
+        let y: DataFrame = DataFrame::new(vec![df.drop_in_place("MedHouseVal").unwrap()]).unwrap();
 
         let x = df.to_ndarray::<Float64Type>().unwrap();
 
@@ -83,45 +74,6 @@ mod tests {
             .unwrap();
 
         x_mat
-    }
-
-    fn boosty_refresh_leaf(xy: DMatrix, evals: &[(&DMatrix, &str); 2]) -> Booster {
-        let learning_params = parameters::learning::LearningTaskParametersBuilder::default()
-            .objective(parameters::learning::Objective::RegSquaredError)
-            .build()
-            .unwrap();
-
-        let tree_params = tree::TreeBoosterParametersBuilder::default()
-            // .eta(0.1)
-            .tree_method(tree::TreeMethod::Hist)
-            .process_type(tree::ProcessType::Update)
-            .updater(vec![tree::TreeUpdater::Refresh])
-            .refresh_leaf(true)
-            .max_depth(3)
-            .build()
-            .unwrap();
-
-        // overall configuration for Booster
-        let booster_params = parameters::BoosterParametersBuilder::default()
-            .booster_type(parameters::booster::BoosterType::Tree(tree_params))
-            .learning_params(learning_params)
-            .verbose(true)
-            .build()
-            .unwrap();
-
-        // finalize training config
-        let params = parameters::TrainingParametersBuilder::default()
-            .dtrain(&xy)
-            .evaluation_sets(Some(evals))
-            .boost_rounds(16)
-            .booster_params(booster_params.clone())
-            .build()
-            .unwrap();
-
-        let bst = Booster::train_increment(&params, "mod.json").unwrap();
-        let path = Path::new("mod_rl_true.json");
-        bst.save(&path).expect("saving booster");
-        bst
     }
 
     fn train_booster(
@@ -172,7 +124,7 @@ mod tests {
             "updater",
             "refresh_leaf",
             "eval_metric",
-            "max_depth"
+            "max_depth",
         ];
 
         let values = vec!["1", "update", "refresh", "true", "rmse", "3"];
