@@ -76,22 +76,6 @@ mod tests {
         x_mat
     }
 
-    fn train_booster(
-        keys: Vec<&str>,
-        vals: Vec<&str>,
-        eval_sets: Option<&[(&DMatrix, &str)]>,
-        xy: DMatrix,
-        bst: Option<Booster>,
-    ) -> Booster {
-        // finalize training config
-        // let eval_sets = &[(&xy, "Train")];
-        let boost_rounds = 16;
-
-        // train model, and print evaluation data
-        let bst = Booster::my_train(eval_sets, &xy, keys, vals, bst).unwrap();
-
-        bst
-    }
 
     #[test]
     fn xg_update_process_test() {
@@ -116,7 +100,8 @@ mod tests {
         let xy_refresh_copy_copy = get_split_data(10320, 20640);
 
         let evals = &[(&xy_copy, "train")];
-        let booster = train_booster(keys.clone(), values.clone(), Some(evals), xy, None);
+        // let booster = train_booster(keys.clone(), values.clone(), Some(evals), xy, None);
+        let bst = Booster::my_train(Some(evals), &xy, keys, values, None).unwrap();
 
         let keys = vec![
             "validate_parameters",
@@ -129,10 +114,9 @@ mod tests {
 
         let values = vec!["1", "update", "refresh", "true", "rmse", "3"];
 
-        //let xyy = DMatrix::load("second.bin").unwrap();
-        //let xyyy = DMatrix::load("second.bin").unwrap();
         let evals = &[(&xy_copy_copy, "orig"), (&xy_refresh_copy, "train")];
-        let booster_rl = train_booster(keys, values, Some(evals), xy_refresh, Some(booster));
+        // let booster_rl = train_booster(keys, values, Some(evals), xy_refresh, Some(booster));
+        let bst_rl = Booster::my_train(Some(evals), &xy, keys, values, Some(bst)).unwrap();
     }
 
     #[test]
