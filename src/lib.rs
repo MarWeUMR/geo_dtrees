@@ -6,6 +6,7 @@ pub mod xgboost;
 mod tests {
 
     use std::any::Any;
+    use std::fs;
     use std::mem;
     use std::mem::size_of;
     use std::path::Path;
@@ -44,6 +45,7 @@ mod tests {
 
         // get data as dataframe
         let df_total = load_dataframe_from_file(path, None);
+        println!("{:?}", df_total.shape());
 
         // get first half of data as dataframe
         let ix: Vec<_> = (start as u32..stop as u32).collect();
@@ -51,6 +53,7 @@ mod tests {
         let idx = IdxCa::new("idx", &ix_slice);
         let mut df = df_total.take(&idx).unwrap();
 
+        println!("{:?}", df);
         // make X and y
         let mut y: DataFrame =
             DataFrame::new(vec![df.drop_in_place("MedHouseVal").unwrap()]).unwrap();
@@ -156,9 +159,9 @@ mod tests {
         let xy_copy = get_split_data(0, 10320);
         let xy_copy_copy = get_split_data(0, 10320);
 
-        let xy_refresh = get_split_data(10320, 20460);
-        let xy_refresh_copy = get_split_data(10320, 20460);
-        let xy_refresh_copy_copy = get_split_data(10320, 20460);
+        let xy_refresh = get_split_data(10320, 20640);
+        let xy_refresh_copy = get_split_data(10320, 20640);
+        let xy_refresh_copy_copy = get_split_data(10320, 20640);
 
         let evals = &[(&xy_copy, "train")];
         let booster = train_booster(keys.clone(), values.clone(), Some(evals), xy, None);
@@ -169,16 +172,15 @@ mod tests {
             "updater",
             "refresh_leaf",
             "eval_metric",
+            "max_depth"
         ];
 
-        let values = vec!["1", "update", "refresh", "true", "rmse"];
+        let values = vec!["1", "update", "refresh", "true", "rmse", "3"];
 
+        //let xyy = DMatrix::load("second.bin").unwrap();
+        //let xyyy = DMatrix::load("second.bin").unwrap();
         let evals = &[(&xy_copy_copy, "orig"), (&xy_refresh_copy, "train")];
         let booster_rl = train_booster(keys, values, Some(evals), xy_refresh, Some(booster));
-        println!("refresh config");
-        booster_rl.save_config();
-        let path = Path::new("mod_rust_refresh_leaf_true.json");
-        booster_rl.save(&path).expect("saving booster");
     }
 
     #[test]
