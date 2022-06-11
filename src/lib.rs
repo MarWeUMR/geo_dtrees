@@ -76,9 +76,14 @@ mod tests {
         x_mat
     }
 
-
     #[test]
     fn xg_update_process_test() {
+        // make data sets
+        // no copy trait so...
+        let xy = get_split_data(0, 10320);
+        let xy_refresh = get_split_data(10320, 20640);
+
+        println!("baseline");
         // make config
         let keys = vec![
             "validate_parameters",
@@ -89,19 +94,16 @@ mod tests {
         ];
 
         let values = vec!["1", "default", "hist", "rmse", "3"];
+        let evals = &[(&xy, "train")];
+        let bst = Booster::my_train(Some(evals), &xy, keys.clone(), values.clone(), None).unwrap();
+        let bst2 = Booster::my_train(Some(evals), &xy, keys.clone(), values.clone(), None).unwrap();
+        let bst3 = Booster::my_train(Some(evals), &xy, keys, values, None).unwrap();
+        // ----------------------------------
+        // refresh without leafs
+        // ----------------------------------
 
-        // make data sets
-        let xy = get_split_data(0, 10320);
-        let xy_copy = get_split_data(0, 10320);
-        let xy_copy_copy = get_split_data(0, 10320);
-
-        let xy_refresh = get_split_data(10320, 20640);
-        let xy_refresh_copy = get_split_data(10320, 20640);
-        let xy_refresh_copy_copy = get_split_data(10320, 20640);
-
-        let evals = &[(&xy_copy, "train")];
-        // let booster = train_booster(keys.clone(), values.clone(), Some(evals), xy, None);
-        let bst = Booster::my_train(Some(evals), &xy, keys, values, None).unwrap();
+        println!("with refresh");
+        
 
         let keys = vec![
             "validate_parameters",
@@ -114,9 +116,42 @@ mod tests {
 
         let values = vec!["1", "update", "refresh", "true", "rmse", "3"];
 
-        let evals = &[(&xy_copy_copy, "orig"), (&xy_refresh_copy, "train")];
-        // let booster_rl = train_booster(keys, values, Some(evals), xy_refresh, Some(booster));
-        let bst_rl = Booster::my_train(Some(evals), &xy, keys, values, Some(bst)).unwrap();
+        let evals = &[(&xy, "orig"), (&xy_refresh, "train")];
+        let _ = Booster::my_train(Some(evals), &xy_refresh, keys, values, Some(bst)).unwrap();
+
+        // ----------------------------------
+        // refresh without leafs
+        // ----------------------------------
+
+        println!("without refresh");
+        let keys = vec![
+            "process_type",
+            "updater",
+            "eval_metric",
+            "max_depth",
+            "refresh_leaf",
+        ];
+
+        let values = vec!["update", "refresh", "rmse", "3", "false"];
+        let evals = &[(&xy, "orig"), (&xy_refresh, "train")];
+        let _ = Booster::my_train(Some(evals), &xy_refresh, keys, values, Some(bst2)).unwrap();
+
+        // ----------------------------------
+        // prune
+        // pointless example?!
+        // ----------------------------------
+
+        println!("prune");
+        let keys = vec![
+            "process_type",
+            "updater",
+            "eval_metric",
+            "max_depth",
+        ];
+
+        let values = vec!["update", "prune", "rmse", "2"];
+        let evals = &[(&xy, "orig"), (&xy, "train")];
+        let _ = Booster::my_train(Some(evals), &xy, keys, values, Some(bst3)).unwrap();
     }
 
     #[test]
