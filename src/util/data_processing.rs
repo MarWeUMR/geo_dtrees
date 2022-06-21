@@ -10,7 +10,6 @@ use polars::{
     io::SerReader,
     prelude::*,
 };
-use tangram_table::{Table, TableColumnType};
 use xgboost_bindings::DMatrix;
 
 pub fn get_multiclass_label_count(
@@ -20,40 +19,6 @@ pub fn get_multiclass_label_count(
 
     let count = target.n_unique().unwrap();
     count as u32
-}
-
-pub fn write_tangram_splits(df: DataFrame, dataset: &str) {
-    let n_rows = df.shape().0 as u32;
-    let split_position = f32::floor(0.8 * n_rows as f32) as u32;
-
-    let first_part: Vec<_> = (0..split_position).collect();
-    let first_part_slice = first_part.as_slice();
-    let second_part: Vec<_> = (split_position..n_rows - 1).collect();
-    let second_part_slice = second_part.as_slice();
-
-    let idx_train = IdxCa::new("idx", first_part_slice);
-    let idx_test = IdxCa::new("idx", second_part_slice);
-
-    let mut x_train: DataFrame = df.take(&idx_train).unwrap();
-    let mut x_test: DataFrame = df.take(&idx_test).unwrap();
-
-    // create train file for tangram
-    let mut file =
-        File::create(format!("datasets/{dataset}/train_data.csv")).expect("could not create file");
-
-    let _ = CsvWriter::new(&mut file)
-        .has_header(true)
-        .with_delimiter(b',')
-        .finish(&mut x_train);
-
-    // create test file for tangram
-    let mut file =
-        File::create(format!("datasets/{dataset}/test_data.csv")).expect("could not create file");
-
-    let _ = CsvWriter::new(&mut file)
-        .has_header(true)
-        .with_delimiter(b',')
-        .finish(&mut x_test);
 }
 
 /// Takes an 2D-array and the target column index and returns a tuple of train/test split arrays
@@ -227,118 +192,6 @@ fn generate_enum_column_schema(enum_cols: Vec<&str>) -> Schema {
 
     let enum_schema = Schema::from(enum_column_schema);
     enum_schema
-}
-
-pub fn build_tangram_options<'a>(
-    dataset: &str,
-    enum_cols: Vec<&str>,
-) -> tangram_table::FromCsvOptions<'a> {
-    // this is necessary if there are integer columns representing categories.
-    // these columns need to get a special treatment
-    let enum_schema = generate_enum_column_schema(enum_cols.clone());
-
-    let mut df = load_dataframe_from_file(
-        format!("datasets/{dataset}/data.csv").as_str(),
-        Some(enum_schema),
-    );
-
-    let mut btm: BTreeMap<String, TableColumnType> = BTreeMap::new();
-
-    for col in enum_cols.iter() {
-        let col = df.drop_in_place(col).unwrap();
-        let uniques = col.unique().unwrap();
-
-        let variants: Vec<_> = uniques
-            .utf8()
-            .unwrap()
-            .into_iter()
-            .map(|elem| elem.unwrap().to_owned())
-            .collect();
-
-        btm.insert(col.name().to_owned(), TableColumnType::Enum { variants });
-    }
-
-    // make options
-    let options = tangram_table::FromCsvOptions {
-        column_types: Some(btm),
-        ..Default::default()
-    };
-
-    options
-}
-
-pub fn get_tangram_matrix(
-    x_train_array: ArrayBase<OwnedRepr<f32>, Dim<[usize; 2]>>,
-    x_test_array: ArrayBase<OwnedRepr<f32>, Dim<[usize; 2]>>,
-    y_train_array: ArrayBase<OwnedRepr<f32>, Dim<[usize; 2]>>,
-    y_test_array: ArrayBase<OwnedRepr<f32>, Dim<[usize; 2]>>,
-    x_col_names: Vec<String>,
-    target_name: String
-) -> (
-    Table,
-    Table,
-    tangram_table::TableColumn,
-    tangram_table::TableColumn,
-) {
-    let x_train = Table::from_ndarray(
-        x_train_array,
-        x_col_names.clone(),
-        Default::default(),
-    )
-    .unwrap();
-    let x_test = Table::from_ndarray(
-        x_test_array,
-        x_col_names,
-        Default::default(),
-    )
-    .unwrap();
-
-    let mut y_train_table = Table::from_ndarray(
-        y_train_array,
-        vec![target_name.clone()],
-        Default::default(),
-    )
-    .unwrap();
-    let mut y_test_table = Table::from_ndarray(
-        y_test_array,
-        vec![target_name],
-        Default::default(),
-    )
-    .unwrap();
-
-    let y_train_column = y_train_table.columns_mut().remove(0);
-    let y_test_column = y_test_table.columns_mut().remove(0);
-
-    
-    (x_train, x_test, y_train_column, y_test_column)
-}
-
-pub fn get_tangram_matrix_from_file(
-    dataset: &str,
-    target_column_idx: usize,
-    enum_cols: Vec<&str>,
-) -> (
-    Table,
-    Table,
-    tangram_table::TableColumn,
-    tangram_table::TableColumn,
-) {
-    let train_path = &format!("datasets/{dataset}/train_data.csv");
-    let test_path = &format!("datasets/{dataset}/test_data.csv");
-    let csv_file_path_train = Path::new(train_path);
-    let csv_file_path_test = Path::new(test_path);
-
-    let options = build_tangram_options(dataset, enum_cols);
-
-    // ------------------------------------
-
-    let mut x_train = Table::from_path(csv_file_path_train, options.clone(), &mut |_| {}).unwrap();
-    let mut x_test = Table::from_path(csv_file_path_test, options.clone(), &mut |_| {}).unwrap();
-
-    let y_train = x_train.columns_mut().remove(target_column_idx);
-    let y_test = x_test.columns_mut().remove(target_column_idx);
-
-    (x_train, x_test, y_train, y_test)
 }
 
 fn split_data(
