@@ -28,141 +28,141 @@ mod tests {
     use crate::util::data_processing::load_dataframe_from_file;
     use crate::util::data_processing::xg_set_ground_truth;
 
-    fn get_split_data(start: usize, stop: usize) -> DMatrix {
-        // load data
-        let path = "california_housing.csv";
+    // fn get_split_data(start: usize, stop: usize) -> DMatrix {
+    //     // load data
+    //     let path = "california_housing.csv";
+    //
+    //     // get data as dataframe
+    //     let df_total = load_dataframe_from_file(path, None);
+    //
+    //     // get first half of data as dataframe
+    //     let ix: Vec<_> = (start as u32..stop as u32).collect();
+    //     let ix_slice = ix.as_slice();
+    //     let idx = IdxCa::new("idx", &ix_slice);
+    //     let mut df = df_total.take(&idx).unwrap();
+    //
+    //     // make X and y
+    //     let y: DataFrame = DataFrame::new(vec![df.drop_in_place("MedHouseVal").unwrap()]).unwrap();
+    //
+    //     let x = df.to_ndarray::<Float64Type>().unwrap();
+    //
+    //     let dims = x.raw_dim();
+    //
+    //     let strides_ax_0 = x.strides()[0] as usize;
+    //     let strides_ax_1 = x.strides()[1] as usize;
+    //     let byte_size_ax_0 = mem::size_of::<f64>() * strides_ax_0;
+    //     let byte_size_ax_1 = mem::size_of::<f64>() * strides_ax_1;
+    //
+    //     // get xgboost style matrices
+    //     let mut x_mat = DMatrix::from_col_major_f64(
+    //         x.as_slice_memory_order().unwrap(),
+    //         byte_size_ax_0,
+    //         byte_size_ax_1,
+    //         dims[0] as usize,
+    //         dims[1] as usize,
+    //     )
+    //     .unwrap();
+    //
+    //     // set labels
+    //     x_mat
+    //         .set_labels(y.to_ndarray::<Float32Type>().unwrap().as_slice().unwrap())
+    //         .unwrap();
+    //
+    //     x_mat
+    // }
 
-        // get data as dataframe
-        let df_total = load_dataframe_from_file(path, None);
-
-        // get first half of data as dataframe
-        let ix: Vec<_> = (start as u32..stop as u32).collect();
-        let ix_slice = ix.as_slice();
-        let idx = IdxCa::new("idx", &ix_slice);
-        let mut df = df_total.take(&idx).unwrap();
-
-        // make X and y
-        let y: DataFrame = DataFrame::new(vec![df.drop_in_place("MedHouseVal").unwrap()]).unwrap();
-
-        let x = df.to_ndarray::<Float64Type>().unwrap();
-
-        let dims = x.raw_dim();
-
-        let strides_ax_0 = x.strides()[0] as usize;
-        let strides_ax_1 = x.strides()[1] as usize;
-        let byte_size_ax_0 = mem::size_of::<f64>() * strides_ax_0;
-        let byte_size_ax_1 = mem::size_of::<f64>() * strides_ax_1;
-
-        // get xgboost style matrices
-        let mut x_mat = DMatrix::from_col_major_f64(
-            x.as_slice_memory_order().unwrap(),
-            byte_size_ax_0,
-            byte_size_ax_1,
-            dims[0] as usize,
-            dims[1] as usize,
-        )
-        .unwrap();
-
-        // set labels
-        x_mat
-            .set_labels(y.to_ndarray::<Float32Type>().unwrap().as_slice().unwrap())
-            .unwrap();
-
-        x_mat
-    }
-
-    #[test]
-    fn xg_update_process_test() {
-        // make data sets
-        // no copy trait so...
-        let xy: DMatrix = get_split_data(0, 10320);
-        let xy_refresh: DMatrix = get_split_data(10320, 20640);
-
-        println!("baseline");
-        // make config
-        let keys = vec![
-            "validate_parameters",
-            "process_type",
-            "tree_method",
-            "eval_metric",
-            "max_depth",
-        ];
-
-        let values = vec!["1", "default", "hist", "rmse", "3"];
-        let evals = &[(&xy, "train")];
-        let bst = Booster::my_train(Some(evals), &xy, keys.clone(), values.clone(), None).unwrap();
-        let bst2 = Booster::my_train(Some(evals), &xy, keys.clone(), values.clone(), None).unwrap();
-        let bst3 = Booster::my_train(Some(evals), &xy, keys, values, None).unwrap();
-        // ----------------------------------
-        // refresh with leafs
-        // ----------------------------------
-
-        println!("with refresh");
-        
-
-        let keys = vec![
-            "validate_parameters",
-            "process_type",
-            "updater",
-            "refresh_leaf",
-            "eval_metric",
-            "max_depth",
-        ];
-
-        let values = vec!["1", "update", "refresh", "true", "rmse", "3"];
-
-        let evals = &[(&xy, "orig"), (&xy_refresh, "train")];
-        let b2 = Booster::my_train(Some(evals), &xy_refresh, keys, values, Some(bst)).unwrap();
-
-        // ----------------------------------
-        // refresh without leafs
-        // ----------------------------------
-
-        let keys = vec![
-            "validate_parameters",
-            "process_type",
-            "updater",
-            "refresh_leaf",
-            "eval_metric",
-            "max_depth",
-        ];
-
-        let values = vec!["1", "update", "refresh", "true", "rmse", "3"];
-
-        let evals = &[(&xy, "orig"), (&xy_refresh, "train")];
-        let _ = Booster::my_train(Some(evals), &xy_refresh, keys, values, Some(b2)).unwrap();
-
-
-        println!("without refresh");
-        let keys = vec![
-            "process_type",
-            "updater",
-            "eval_metric",
-            "max_depth",
-            "refresh_leaf",
-        ];
-
-        let values = vec!["update", "refresh", "rmse", "3", "false"];
-        let evals = &[(&xy, "orig"), (&xy_refresh, "train")];
-        let _ = Booster::my_train(Some(evals), &xy_refresh, keys, values, Some(bst2)).unwrap();
-
-        // ----------------------------------
-        // prune
-        // pointless example?!
-        // ----------------------------------
-
-        println!("prune");
-        let keys = vec![
-            "process_type",
-            "updater",
-            "eval_metric",
-            "max_depth",
-        ];
-
-        let values = vec!["update", "prune", "rmse", "2"];
-        let evals = &[(&xy, "orig"), (&xy, "train")];
-        let _ = Booster::my_train(Some(evals), &xy, keys, values, Some(bst3)).unwrap();
-    }
+    // #[test]
+    // fn xg_update_process_test() {
+    //     // make data sets
+    //     // no copy trait so...
+    //     let xy: DMatrix = get_split_data(0, 10320);
+    //     let xy_refresh: DMatrix = get_split_data(10320, 20640);
+    //
+    //     println!("baseline");
+    //     // make config
+    //     let keys = vec![
+    //         "validate_parameters",
+    //         "process_type",
+    //         "tree_method",
+    //         "eval_metric",
+    //         "max_depth",
+    //     ];
+    //
+    //     let values = vec!["1", "default", "hist", "rmse", "3"];
+    //     let evals = &[(&xy, "train")];
+    //     let bst = Booster::my_train(Some(evals), &xy, keys.clone(), values.clone(), None).unwrap();
+    //     let bst2 = Booster::my_train(Some(evals), &xy, keys.clone(), values.clone(), None).unwrap();
+    //     let bst3 = Booster::my_train(Some(evals), &xy, keys, values, None).unwrap();
+    //     // ----------------------------------
+    //     // refresh with leafs
+    //     // ----------------------------------
+    //
+    //     println!("with refresh");
+    //     
+    //
+    //     let keys = vec![
+    //         "validate_parameters",
+    //         "process_type",
+    //         "updater",
+    //         "refresh_leaf",
+    //         "eval_metric",
+    //         "max_depth",
+    //     ];
+    //
+    //     let values = vec!["1", "update", "refresh", "true", "rmse", "3"];
+    //
+    //     let evals = &[(&xy, "orig"), (&xy_refresh, "train")];
+    //     let b2 = Booster::my_train(Some(evals), &xy_refresh, keys, values, Some(bst)).unwrap();
+    //
+    //     // ----------------------------------
+    //     // refresh without leafs
+    //     // ----------------------------------
+    //
+    //     let keys = vec![
+    //         "validate_parameters",
+    //         "process_type",
+    //         "updater",
+    //         "refresh_leaf",
+    //         "eval_metric",
+    //         "max_depth",
+    //     ];
+    //
+    //     let values = vec!["1", "update", "refresh", "true", "rmse", "3"];
+    //
+    //     let evals = &[(&xy, "orig"), (&xy_refresh, "train")];
+    //     let _ = Booster::my_train(Some(evals), &xy_refresh, keys, values, Some(b2)).unwrap();
+    //
+    //
+    //     println!("without refresh");
+    //     let keys = vec![
+    //         "process_type",
+    //         "updater",
+    //         "eval_metric",
+    //         "max_depth",
+    //         "refresh_leaf",
+    //     ];
+    //
+    //     let values = vec!["update", "refresh", "rmse", "3", "false"];
+    //     let evals = &[(&xy, "orig"), (&xy_refresh, "train")];
+    //     let _ = Booster::my_train(Some(evals), &xy_refresh, keys, values, Some(bst2)).unwrap();
+    //
+    //     // ----------------------------------
+    //     // prune
+    //     // pointless example?!
+    //     // ----------------------------------
+    //
+    //     println!("prune");
+    //     let keys = vec![
+    //         "process_type",
+    //         "updater",
+    //         "eval_metric",
+    //         "max_depth",
+    //     ];
+    //
+    //     let values = vec!["update", "prune", "rmse", "2"];
+    //     let evals = &[(&xy, "orig"), (&xy, "train")];
+    //     let _ = Booster::my_train(Some(evals), &xy, keys, values, Some(bst3)).unwrap();
+    // }
 
     #[test]
     fn xg_input_test() {

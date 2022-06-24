@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 xgboost-bindings = {git = "https://github.com/MarWeUMR/xgboost-bindings"}
-polars = {version="*", features=["ndarray", "strings", "rows", "fmt", "to_dummies"]}
+# polars = {version="*", features=["ndarray", "strings", "rows", "fmt", "to_dummies"]}
 ndarray = "0.14"
 num-traits = "*"
 serde = { version = "1.0.137", features = ["derive"] }
